@@ -321,7 +321,7 @@ DATA natcourse(KEEP = id all cmv male age d td gvhd tg platnorm tp relapse tr)
     IF platnormm1=1 THEN platnorm=1; *assume platelets stay normal once they reach normal levels;
     ELSE DO; *normal platelet probability at day k;
      logitpp = p1 + p2*all + p3*cmv + p4*male + p5*age + p6*agecurs1 + p7*agecurs2 + p8*gvhdm1 + p9*daysgvhd + p10*daysnorelapse + p11*wait;
-     IF logitpp <-700 THEN gvhd = 1;*avoid machine error;
+     IF logitpp <-700 THEN platnorm = 1;*avoid machine error;
      ELSE platnorm=RAND("bernoulli",1/(1+exp(-(logitpp))));
     END; *normal platelet probability at day k;
     *relapse(Time varying covariate L2);
@@ -348,7 +348,7 @@ DATA natcourse(KEEP = id all cmv male age d td gvhd tg platnorm tp relapse tr)
     IF done=0 THEN DO; *censoring and death probability at day k;
      *censoring probability at day k;
      logitpc =  c1 + c2*all + c3*cmv + c4*male + c5*age + c6*daysgvhd + c7*daysnoplatnorm + c8*daysnorelapse + c9*agesq + c10*day + c11*daysq + c12*daycu + c13*wait;
-     IF logitpc <-700 THEN d = 1;  *avoid machine error;
+     IF logitpc <-700 THEN cens = 1;  *avoid machine error;
      ELSE cens = RAND("bernoulli",1/(1+exp(-(logitpc))));
      IF intervention > 0 THEN cens=0; *intervening to prevent censoring for everything but natural course;
      *IF intervention > -1 THEN cens=0; *intervening to prevent censoring for everything;
@@ -400,6 +400,7 @@ RUN;
 ****************dont include code below here*******************;
 /*
 PROC PHREG DATA = gformula;
+ TITLE "proportional hazards";
  MODEL td*d(0) = gvhd1 gvhd2 / TIES=EFRON RL;
  gvhd1=gvhd*(td<=100); gvhd2=gvhd*(td>100);
 RUN;
